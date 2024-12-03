@@ -1,20 +1,23 @@
-import { Octokit } from "octokit";
-import { readXLSX } from "../readXLSX";
-import { ExtractedCommit, Generation, MadePR } from "../types";
-import { codium } from "./generators/codium";
-import { storeXLSX } from "../storeXLSX";
+import { Octokit } from 'octokit';
+import { readXLSX } from '../readXLSX';
+import { ExtractedCommit, Generation, MadePR } from '../types';
+import { codium } from './generators/codium';
+import { storeXLSX } from '../storeXLSX';
 
-export const extractGeneration = async (auth: string) => {
-  const commits = readXLSX<ExtractedCommit>("./extractGeneration/commits.xlsx");
-  const PRs = readXLSX<MadePR>("./extractGeneration/PRs.xlsx");
+const octokit = new Octokit({
+  auth: process.env.GITHUB_KEY,
+});
 
-  const octokit = new Octokit({ auth });
+export const extractGeneration = async () => {
+  const commits = readXLSX<ExtractedCommit>('./extractGeneration/commits.xlsx');
+  const PRs = readXLSX<MadePR>('./extractGeneration/PRs.xlsx');
+
   const { data: me } = await octokit.rest.users.getAuthenticated();
 
   const result: Generation[] = [];
   let index = 0;
   for (const PR of PRs) {
-    const description = await codium(auth, me.login, PR);
+    const description = await codium(me.login, PR);
 
     const commit = commits[index++];
     const { data: commitDetail } = await octokit.rest.repos.getCommit({
@@ -34,5 +37,5 @@ export const extractGeneration = async (auth: string) => {
     console.log(`${index}/${PRs.length}`);
   }
 
-  await storeXLSX(result, "./extractGeneration/output.xlsx");
+  await storeXLSX(result, './extractGeneration/output.xlsx');
 };

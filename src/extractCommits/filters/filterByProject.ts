@@ -9,6 +9,8 @@ const blacklist = [
   "tutorials",
   "ruoyi-vue-pro",
   "shardingsphere",
+  "RxJava",
+  "FizzBuzzEnterpriseEdition",
 ];
 
 export const filterByProject = (repo: Repository) =>

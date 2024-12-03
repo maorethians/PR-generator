@@ -4,6 +4,8 @@ import { filterByAuthor } from "./filters/filterByAuthor";
 import { filterByProject } from "./filters/filterByProject";
 import { hasJavaChange } from "./filters/hasJavaChange";
 import { storeXLSX } from "../storeXLSX";
+import { isBigCommit } from "./filters/isBigCommit";
+import { Commit } from "./filters/types";
 
 interface OutputCommit {
   owner: string;
@@ -13,10 +15,12 @@ interface OutputCommit {
 }
 
 const octokit = new Octokit({
-  auth: "",
+  auth: process.env.GITHUB_KEY,
 });
 
-const extractCommits = async () => {
+const NUMBER_OF_PAGES = 10;
+
+export const extractCommits = async () => {
   const { data: res } = await octokit.rest.search.repos({
     q: "language:java",
     sort: "stars",
@@ -24,16 +28,24 @@ const extractCommits = async () => {
     per_page: 100,
   });
   const repos = res.items;
-
-  const output: OutputCommit[] = [];
   const validRepos = repos.filter(filterByProject);
+
   let index = 1;
+  const output: OutputCommit[] = [];
   for (const repo of validRepos) {
-    const { data: commits } = await octokit.rest.repos.listCommits({
-      repo: repo.name,
-      owner: repo.owner?.login,
-      per_page: 100,
-    });
+    const commitResults = await Promise.all(
+      Array.from({ length: NUMBER_OF_PAGES }).map((_, index) =>
+        octokit.rest.repos.listCommits({
+          repo: repo.name,
+          owner: repo.owner?.login,
+          page: index + 1,
+          per_page: 100,
+        }),
+      ),
+    );
+    const commits = commitResults
+      .map((res: { data: Commit[] }) => res.data)
+      .flat();
 
     const directFilteredCommits = commits
       .filter(filterByMessageLength)
@@ -46,7 +58,7 @@ const extractCommits = async () => {
         ref: commit.sha,
       });
 
-      if (hasJavaChange(commitDetail)) {
+      if (hasJavaChange(commitDetail) && isBigCommit(commitDetail)) {
         output.push({
           owner: repo.owner?.login,
           repo: repo.name,
@@ -56,10 +68,10 @@ const extractCommits = async () => {
       }
     }
 
-    console.log(`${index++}/${validRepos.length} - ${output.length}`);
+    console.log(
+      `${index++}/${validRepos.length} - Quota: ${directFilteredCommits.length} - Extracted: ${output.length}`,
+    );
   }
 
-  return output;
+  await storeXLSX(output, "./extractCommits/output.xlsx");
 };
-
-extractCommits().then((res) => storeXLSX(res, "output.xlsx"));

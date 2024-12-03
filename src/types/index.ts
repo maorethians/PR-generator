@@ -14,7 +14,6 @@ export interface MadePR {
 export interface Generation {
   generated: string;
   ground: string;
-  url: string;
   additions: number;
   deletions: number;
 }
@@ -30,7 +29,7 @@ export type Evaluation = Intentions & {
   uncovered: string;
   uncoveredLength: number;
   additional: string;
-  additionalLength: string;
+  additionalLength: number;
   precision: number;
   recall: number;
 };

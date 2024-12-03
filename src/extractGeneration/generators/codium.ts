@@ -1,13 +1,11 @@
-import { Octokit } from "octokit";
-import { MadePR } from "../../types";
+import { Octokit } from 'octokit';
+import { MadePR } from '../../types';
 
-export const codium = async (
-  auth: string,
-  owner: string,
-  PR: MadePR,
-): Promise<string> => {
-  const octokit = new Octokit({ auth });
+const octokit = new Octokit({
+  auth: process.env.GITHUB_KEY,
+});
 
+export const codium = async (owner: string, PR: MadePR): Promise<string> => {
   const { data: PRDetail } = await octokit.rest.pulls.get({
     owner,
     repo: PR.repo,
@@ -22,10 +20,10 @@ export const codium = async (
   // });
 
   const description = PRDetail.body
-    ?.split("___")
-    .find((section: string) => section.includes("### **Description**"));
+    ?.split('___')
+    .find((section: string) => section.includes('### **Description**'));
   if (!description) {
-    throw new Error("There is no codium generation in this PR");
+    throw new Error('There is no codium generation in this PR');
   }
 
   return description;

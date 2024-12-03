@@ -3,9 +3,11 @@ import { readXLSX } from "../readXLSX";
 import { storeXLSX } from "../storeXLSX";
 import { ExtractedCommit, MadePR } from "../types";
 
-export const forkAndPR = async (auth: string) => {
-  const octokit = new Octokit({ auth });
+const octokit = new Octokit({
+  auth: process.env.GITHUB_KEY,
+});
 
+export const forkAndPR = async () => {
   const PRs: MadePR[] = [];
 
   const commits = readXLSX<ExtractedCommit>("./forkAndPR/input.xlsx");

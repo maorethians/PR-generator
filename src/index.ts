@@ -1,8 +1,10 @@
-import "dotenv/config";
-import { evaluate } from "./evaluate";
+import 'dotenv/config';
+import { evaluateDir } from './evaluateDir';
 
 // extractCommits();
 // forkAndPR();
 // extractGeneration();
+evaluateDir();
 // extractIntentions();
-evaluate();
+// evaluate();
+// langGraph();
